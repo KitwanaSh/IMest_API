@@ -1,4 +1,4 @@
-INMEST Management
+# INMEST Management
 This contains models for an LMS including Courses, Class Schedules, Attendance, Queries etc.
 
 ## Models
