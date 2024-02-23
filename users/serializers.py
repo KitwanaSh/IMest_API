@@ -18,7 +18,7 @@ class UserSerializer(serializers.Serializer):
 class CohortSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
-    description = serializers.TextField()
+    description = serializers.CharField()
     year = serializers.IntegerField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
