@@ -1,67 +1,82 @@
 from django.db import models
-from users.models import Cohort, IMuser
+import datetime
+from users.models import *
+
 
 class Course(models.Model):
-    """ Class representation of courses """
-    name = models.CharField(max_length=50)
-    descriptionn = models.TextField(blank=True, null=True)
+    name=models.CharField(max_length=1000)
+    description = models.TextField(default='N/A', blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     date_modified = models.DateTimeField(auto_now=True, blank=True, null=True)
-    
+
     def __str__(self):
-        return  self.name
-    
+        return f"{self.name}"
+
+
 class ClassSchedule(models.Model):
-    title = models.CharField(max_length=40)
-    description = models.TextField(blank=True, null=True)
-    start_date_and_time = models.IntegerField()
-    end_date_and_time = models.IntegerField()
-    is_repeated = models.BooleanField()
-    repeat_frequency = models.IntegerField(default=2)
-    is_active = models.BooleanField()
-    organizer = models.CharField(max_length=60, blank=True, null=True)
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="class_cohort")
-    venue = models.CharField(max_length=60, null=True)
+    REPEAT_FREQUENCIES = (
+        ('DAILY', 'Daily'),
+        ('WEEKLY', 'Weekly'),
+        ('MONTHLY', 'Monthly'),
+    )
+    MEETING_TYPES = (
+        ('CLASS_SESSIONS', 'Class Sessions'),
+        ('WELLNESS_SESSIONS', 'Wellness Sessions'),
+        ('GUEST_LECTURES', 'Gues Lesture'),
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    start_date_and_time = models.DateTimeField()
+    end_date_and_time = models.DateTimeField()
+    is_repeated = models.BooleanField(default=False)
+    repeat_frequency = models.CharField(max_length=20, choices=REPEAT_FREQUENCIES, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    organizer = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name='organized_classes')  
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='class_schedules') 
+    Course = models.ForeignKey(Course, on_delete=models.SET_NULL, blank=True, null=True,related_name='class_schedule_course') 
+    facilitator= models.ForeignKey(IMUser, on_delete=models.SET_NULL, choices=MEETING_TYPES, blank=True, null=True,related_name='class_schedule_facilitator') 
+    venue = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return self.title
-    
+        return f"{self.title} ({self.cohort.name})"
+
 class ClassAttendance(models.Model):
-    class_schedule = models.ManyToManyField(ClassSchedule, related_name="attendance_schel")
-    attendee = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="attendee_user")
-    is_present = models.BooleanField()
+    class_schedule = models.ForeignKey(ClassSchedule, on_delete=models.CASCADE, related_name='attendances')
+    attendee = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name='attended_classes')  
+    is_present = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="author_attendee")
+    author = models.ForeignKey(IMUser, on_delete=models.CASCADE)  # Assuming IMUser from Part 1
     
-    
-    def __str__(self):
-        return f"{self.class_schedule} to {self.attendee}"
 
-    
+    def __str__(self):
+        return f"{self.class_schedule.title}: {self.attendee.first_name} {self.attendee.last_name}"
+
 class Query(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True, null=True)
-    submitted_by = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="submitQuery_user")
-    assigned_to = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="assignQuery_user")
-    resolution_status = models.CharField(max_length=20, choices=[
-        ("PENDING", "PENDING"), ("IN_PROGRESS", "IN_PROGRESS"), ("DECLINED", "DECLINED"), ("RESOLVED", "RESOLVED")
-        ])
+    RESOLUTION_STATUSES = (
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('DECLINED', 'Declined'),
+        ('RESOLVED', 'Resolved'), 
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    submitted_by = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name='submitted_queries')
+    assigned_to = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name='assigned_queries', blank=True, null=True)
+    resolution_status = models.CharField(max_length=30, choices=RESOLUTION_STATUSES, default='PENDING')
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="author_query")
+    author = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name="query_author")
 
     def __str__(self):
-        return self.title
+        return f"{self.title} (Submitted by: {self.submitted_by.email})"
 
-    
 class QueryComment(models.Model):
-    query = models.ForeignKey(Query, related_name="comment_query", on_delete=models.CASCADE)
-    comment = models.CharField(max_length=1500)
+    query = models.ForeignKey(Query, on_delete=models.CASCADE, related_name='comments')
+    comment = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="author_queryComment")
+    author = models.ForeignKey(IMUser, on_delete=models.CASCADE) 
 
     def __str__(self):
-        return self.query
-    
+        return f"Comment on {self.query.title} ({self.author.username})"

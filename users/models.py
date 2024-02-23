@@ -1,41 +1,47 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
+# Create your models here.
 
-class IMuser(models.Model):
-    """ IMuser table """
-    first_name = models.CharField(max_length=40)
-    last_name = models.CharField(max_length=40)
-    is_active = models.BooleanField()
-    user_type = models.CharField( max_length=20, choices=[
-        ("EIT", "EIT"), ("TEACHING_FELLOW", "TEACHING_FELLOW"), ("ADMIN_STAFF", "ADMIN_STAFF"), ("ADMIN", "ADMIN")
-        ]
+class IMUser(AbstractUser):
+    USER_TYPES = (
+        ('EIT', 'EIT'),
+        ('TEACHING_FELLOW', 'TEACHING FELLOW'),
+        ('ADMIN_STAFF', 'ADMINISTRATIVE STAFF'),
+        ('ADMIN', 'ADMINSTRATOR'),
     )
-
-    def __str__(self):
-        return f"{self.first_name} - {self.last_name}"
+    first_name = models.CharField(max_length=155, blank=True)
+    last_name = models.CharField(max_length=155, blank=True)
+    middle_name = models.CharField(max_length=155, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    user_type = models.CharField(max_length=20, choices=USER_TYPES, default='EIT')
+    date_modified = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(auto_now_add=True)
     
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
 
 class Cohort(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    year = models.IntegerField(default=2024)
-    start_date = models.DateTimeField(blank=True, null=True)
-    end_date = models.DateTimeField(blank=True, null=True)
-    is_active = models.BooleanField()
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    year = models.IntegerField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="author_name")
+    author = models.ForeignKey(IMUser, related_name="cohort_author", on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
-
+        return f"{self.name} ({self.year})"
+    
 class CohortMember(models.Model):
-    name = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="cohort_name")
-    member = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="cohort_members")
-    is_active = models.BooleanField()
+    cohort = models.ForeignKey(Cohort, default="", on_delete=models.CASCADE, related_name='cohort')
+    member = models.ForeignKey(IMUser, on_delete=models.CASCADE, related_name='cohort_member')
+    is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(IMuser, on_delete=models.CASCADE, related_name="member_userType")
+    author = models.ForeignKey(IMUser, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
+        return f"{self.member.first_name} {self.member.last_name} ({self.cohort.name})"
