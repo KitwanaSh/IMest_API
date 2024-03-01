@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "main",
     "users",
     "rest_framework",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
@@ -42,6 +43,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "inmest_api.urls"
 AUTH_USER_MODEL = "users.IMUser"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated'
+    ),
+}
 
 TEMPLATES = [
     {
@@ -60,6 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "inmest_api.wsgi.application"
+
 
 
 # Database

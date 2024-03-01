@@ -1,5 +1,19 @@
 from rest_framework import serializers
 
+class AuthSerializer(serializers.Serializer):
+    """
+    Serializer the User Model
+    Args:
+        - serializer
+    """
+    id = serializers.IntegerField()
+    auth_token= serializers.CharField(read_only=True)
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    phone_number = serializers.CharField()
+    username = serializers.CharField()
+    email = serializers.CharField()
+
 class UserSerializer(serializers.Serializer):
     """
     Serializer the User Model
