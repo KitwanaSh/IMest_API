@@ -24,8 +24,9 @@ class IMUser(AbstractUser):
 
 @receiver(post_save, sender=IMUser)
 def generate_auth_token(sender, instance=None, created=False, **kwargs):
-    token = Token.objects.create(user=instance)
-    token.save()
+    if created:
+        token = Token.objects.create(user=instance)
+        token.save()
 
 class Cohort(models.Model):
     name = models.CharField(max_length=255)
