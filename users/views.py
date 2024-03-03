@@ -43,18 +43,26 @@ def user_login(request):
     #2 check user existence
     try:
         user = IMUser.objects.get(username=username)
+
+        # Check if the user is active
+        if not user.is_active:
+            return Response({"message": "Your account is inactive"}, status.HTTP_403_FORBIDDEN)
         #3 user authentication
         auth_user = authenticate(username=username, password=password)
         if auth_user:
             login(request, user)
+            # Reset the temporal_login_fail counter if the login was successful
+            if user.temporal_login_fail > 0:
+                user.temporal_login_fail = 0
+                user.save()
             serializer = AuthSerializer(user, many=False)
             return Response({"Result": serializer.data})
         else:
-            return Response({"detai": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+            # Increase the temporal_login_fail counter if the login was not successful
+            user.temporal_login_fail += 1
+            user.save()
+            return Response({"detail": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
     except IMUser.DoesNotExist:
         return Response({"detail": "Username does not exist"}, status.HTTP_400_BAD_REQUEST)
-    
-
-    
 
     #5 respond to the users request
